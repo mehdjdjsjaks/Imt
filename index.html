@@ -1,27 +1,25 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="fa">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#000000" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon.png" />
-  <title>Axcel NLP Bot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Axcel NLP Real</title>
+  <script src="https://unpkg.com/compromise"></script>
   <style>
     body {
       margin: 0;
       background-color: #000;
       color: white;
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
     header {
-      background-color: #111;
+      background: #111;
       padding: 1rem;
       text-align: center;
       font-size: 1.5rem;
-      font-weight: bold;
       border-bottom: 1px solid #333;
     }
     .chat {
@@ -38,11 +36,11 @@
       border-radius: 10px;
     }
     .user {
-      background-color: #444;
+      background: #444;
       align-self: flex-end;
     }
     .bot {
-      background-color: #222;
+      background: #222;
       align-self: flex-start;
     }
     form {
@@ -51,7 +49,7 @@
       background-color: #111;
       border-top: 1px solid #333;
     }
-    input[type="text"] {
+    input {
       flex: 1;
       padding: 0.75rem;
       border-radius: 10px;
@@ -72,12 +70,13 @@
   </style>
 </head>
 <body>
-  <header>Axcel</header>
+  <header>Axcel NLP</header>
   <div class="chat" id="chat"></div>
   <form id="form">
-    <input type="text" id="input" placeholder="بنویس..." required />
+    <input type="text" id="input" placeholder="جمله‌ای بنویس..." required />
     <button type="submit">ارسال</button>
-  </form>  <script>
+  </form>
+  <script>
     const form = document.getElementById('form');
     const input = document.getElementById('input');
     const chat = document.getElementById('chat');
@@ -89,7 +88,7 @@
       addMessage(text, 'user');
       input.value = '';
       setTimeout(() => {
-        const response = generateQuestion(text);
+        const response = analyzeText(text);
         addMessage(response, 'bot');
       }, 500);
     });
@@ -102,24 +101,25 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    function generateQuestion(inputText) {
-      const keywords = extractKeywords(inputText);
-      if (keywords.length === 0) return 'میتونی بیشتر توضیح بدی؟';
+    function analyzeText(text) {
+      const doc = nlp(text);
+      const nouns = doc.nouns().out('array');
+      const verbs = doc.verbs().out('array');
+      const tense = doc.verbs().isPast().out('array').length ? 'گذشته' : 'حال یا آینده';
+      const pronouns = doc.pronouns().out('array');
 
-      const base = [
-        'در مورد',
-        'چرا',
-        'چه نظری داری درباره',
-        'چه احساسی داری نسبت به'
-      ];
-      const rand = base[Math.floor(Math.random() * base.length)];
-      return `${rand} ${keywords[0]}؟`;
-    }
+      if (!nouns.length && !verbs.length) {
+        return 'متوجه نشدم. لطفاً جمله‌ی واضح‌تری بنویس.';
+      }
 
-    function extractKeywords(text) {
-      const stopwords = ['من', 'تو', 'او', 'ما', 'شما', 'آنها', 'هستم', 'هستی', 'هست', 'بود', 'دارم', 'داری', 'داره'];
-      const words = text.replace(/[.,!?؟]/g, '').split(' ');
-      return words.filter(word => word.length > 2 && !stopwords.includes(word));
+      let response = `تشخیص دادم که جمله شما درباره‌ی `;
+      if (nouns.length) response += `«${nouns[0]}» `;
+      if (verbs.length) response += `و فعلی مثل «${verbs[0]}» داره `;
+      response += `و زمان جمله به نظر می‌رسه ${tense} باشه.`;
+      if (pronouns.length) response += ` ضمیر استفاده‌شده: ${pronouns.join(', ')}`;
+
+      return response;
     }
-  </script></body>
+  </script>
+</body>
 </html>
